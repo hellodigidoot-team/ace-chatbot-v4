@@ -1,0 +1,218 @@
+:root{
+  --brand:#f4a63a;
+  --panel:#f2f3f4;
+  --text:#0f172a;
+  --ghost-input: 110px;
+  --ghost-card: 84px;
+}
+
+.hero{
+  min-height:100dvh;
+  background:#fff url("/wave.jpg") center bottom / cover no-repeat;
+  position:relative;
+  overflow:hidden;
+}
+
+.stage{
+  width:min(92vw, 980px);
+  min-height:100dvh;
+  margin:0 auto;
+  display:grid;
+  align-items:center;
+  justify-items:center;
+  position:relative;
+  z-index:1;
+}
+
+.card{
+  background:var(--panel);
+  border-radius:28px 28px 48px 48px;
+  box-shadow:0 24px 60px rgba(0,0,0,.12);
+  min-height:clamp(320px, 50vh, 520px);
+  width:100%;
+  padding:24px 24px 64px;
+  position:relative;
+}
+
+@keyframes popIn {
+  0%   { opacity:0; transform: translateY(12px) scale(.98); }
+  100% { opacity:1; transform: translateY(0)    scale(1);   }
+}
+.cardHidden{ display:none; }
+.cardVisible{ display:block; animation: popIn 300ms ease both; }
+
+.ghost{
+  width: var(--ghost-card);
+  height: var(--ghost-card);
+  filter:drop-shadow(0 10px 18px rgba(0,0,0,.18));
+  user-select:none; pointer-events:none;
+  margin-left:6px; margin-top:2px;
+}
+
+/* transcript & message list */
+.transcript{
+  margin:12px 8px 0 8px;
+}
+
+.placeholder{ color:#9ca3af; font-size:14px; }
+
+.messages{
+  display:flex; flex-direction:column; gap:10px;
+  margin-top:8px;
+  max-height:52vh; overflow-y:auto;
+  padding-right:6px;
+  padding-bottom:8px;
+}
+
+/* message bubbles */
+.msg{
+  max-width:75%;
+  padding:10px 12px;
+  border:1px solid #e5e7eb;
+  border-radius:14px;
+  font-size:14px; line-height:1.4;
+  word-wrap:break-word; white-space:pre-wrap;
+}
+.bot{ background:#f8fafc; color:#0f172a; margin-right:auto; }
+.user{ background:#ffffff; color:#0f172a; margin-left:auto; }
+
+/* rows & avatars */
+.row{ display:flex; gap:10px; align-items:flex-end; }
+.botRow{ justify-content:flex-start; }
+.userRow{ justify-content:flex-end; }
+.msgAvatar{ width:50px; height:50px; border-radius:50%; flex:0 0 auto; }
+
+/* ---------- Feedback (image-based) ---------- */
+
+/* Ensure the bot bubble can align inner rows to the end */
+.msg.bot {
+  display:flex;
+  flex-direction:column;
+}
+
+/* Feedback row sits at the end (right) of the bot bubble */
+.feedback{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-top:8px;
+  margin-left:auto;      /* pushes feedback row to the right edge inside bubble */
+  justify-content:flex-end;
+  width:fit-content;
+}
+
+/* Button reset + hover/active/disabled UX */
+.iconBtn{
+  border:none;
+  background:transparent;
+  padding:6px;
+  line-height:0;
+  border-radius:8px;
+  cursor:pointer;
+  transition: transform 120ms ease, opacity 120ms ease, background-color 120ms ease;
+}
+.iconBtn:hover{
+  transform: translateY(-1px);
+  background-color: rgba(0,0,0,0.05);
+}
+.iconBtn:active{
+  transform: translateY(0);
+}
+.iconBtn:disabled{
+  opacity:0.5;
+  cursor:not-allowed;
+}
+
+/* The PNG icon size (matches Next/Image width/height=20) */
+.thumbImg{
+  display:block;
+  width:30px;
+  height:30px;
+}
+
+/* Optional note after clicking feedback */
+.feedbackNote{
+  margin-left:6px;
+  font-size:12px;
+  opacity:0.8;
+}
+
+/* ---------- Removed old sprite-based thumbs ----------
+   (These selectors are intentionally gone)
+   .thumb, .up, .down
+----------------------------------------------------- */
+
+/* input dock */
+.inputDock{
+  position:fixed;
+  width:min(92vw, 640px);
+  z-index:2;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  transition: top 300ms ease, bottom 300ms ease, transform 300ms ease;
+}
+.dockCenter{ left:50%; top:50%; transform:translate(-50%, -50%); }
+.dockBottom{ left:50%; top:auto; bottom:clamp(16px, 10vh, 84px); transform:translateX(-50%); }
+
+.input{
+  width:100%; height:56px; border-radius:999px;
+  border:1px solid #cbd5e1; background:#f3f4f6;
+  padding:0 22px; outline:none; font-size:15px;
+  box-shadow:inset 0 1px 0 rgba(0,0,0,.03), 0 4px 18px rgba(0,0,0,.06);
+}
+.input::placeholder{ color:#6b7280; font-style:italic; }
+.input:focus{ border-color:#94a3b8; box-shadow:0 0 0 3px rgba(148,163,184,.25); }
+
+/* Force black text for input/autofill */
+.input { color:#000; }
+.input::placeholder { color:#000; opacity:0.6; }
+.input:-webkit-autofill, .input:-webkit-autofill:focus {
+  -webkit-text-fill-color:#000;
+  caret-color:#000;
+  transition: background-color 600000s 0s, color 600000s 0s;
+}
+
+/* Loading/typing UI */
+.loadingOverlay{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; z-index:5; pointer-events:none; background: linear-gradient(to bottom, rgba(255,255,255,0.70), rgba(255,255,255,0.40)); animation: fadeIn 180ms ease-out both; }
+.loadingBox{ display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center; }
+.thinkingGhost{ filter: drop-shadow(0 8px 16px rgba(0,0,0,.18)); animation: bob 1.6s ease-in-out infinite; }
+.spinner{ width:28px; height:28px; border-radius:50%; border:3px solid rgba(15,23,42,0.12); border-top-color:#3DB6A4; animation: spin .8s linear infinite; }
+.loadingText{ margin:0; font-size:14px; color:#475569; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+.botTyping{ display:flex; align-items:center; gap:10px; color:#475569; background:#f8fafc; border-color:#e2e8f0; }
+.dotSpinner{ display:inline-flex; gap:6px; align-items:center; }
+.dotSpinner span{ width:8px; height:8px; border-radius:50%; background:#3DB6A4; opacity:.6; animation: dotBounce 1s infinite ease-in-out; }
+.dotSpinner span:nth-child(2){ animation-delay:.15s; }
+.dotSpinner span:nth-child(3){ animation-delay:.30s; }
+.typingText{ font-size:13px; color:#64748b; }
+@keyframes dotBounce{ 0%,80%,100% { transform:scale(.66); opacity:.4; } 40% { transform:scale(1); opacity:1; } }
+
+/* Responsive tweaks */
+@media (max-width: 640px){
+  :root{
+    --ghost-input: clamp(44px, 10vw, 58px);
+    --ghost-card: clamp(56px, 12vw, 72px);
+  }
+  .card{ padding:18px 16px 60px; border-radius:22px; }
+  .ghost{ width:72px; height:72px; }
+  .inputDock{ width:min(94vw, 560px); }
+  .input{ height:52px; }
+}
+
+/* Mascot beside input */
+.inputGhost{
+  width: var(--ghost-input);
+  height: var(--ghost-input);
+  border-radius:50%;
+  filter: drop-shadow(0 8px 14px rgba(0,0,0,.18));
+  user-select:none;
+  pointer-events:auto;
+  cursor:pointer;
+  top: 50%;
+  transform: translateY(calc(-50% - -20px));
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+.ghostVisible{ opacity:1; }
