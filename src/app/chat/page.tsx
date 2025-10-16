@@ -1,10 +1,17 @@
 // src/app/chat/page.tsx
 'use client';
 
-import { useState, useRef, useEffect, type FormEvent } from 'react';
+import { useState, useRef, useEffect, type FormEvent, type ComponentPropsWithoutRef, type ReactNode, type CSSProperties } from 'react';
 import Image from 'next/image';
 import { SignedIn, SignedOut, RedirectToSignIn } from '@clerk/nextjs';
 import styles from './chat.module.css';
+
+// ⬇️ Markdown + GFM + code highlighting
+import ReactMarkdown, { type Components } from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+// ✅ Import the theme as a default export (fixes the style typing error)
+import oneDark from 'react-syntax-highlighter/dist/esm/styles/prism/one-dark';
 
 type Msg = { role: 'user' | 'assistant'; content: string; response_id?: string };
 
@@ -51,6 +58,44 @@ function genSessionId() {
   return `sess_${Math.random().toString(36).slice(2)}_${Date.now()}`;
 }
 
+/** ---------- Typed Code renderer (no internal imports, no any) ---------- */
+type CodeProps = ComponentPropsWithoutRef<'code'> & {
+  inline?: boolean;
+  children?: ReactNode;
+};
+
+const CodeBlock = ({ inline, className, children, style: codeStyle, ...props }: CodeProps) => {
+  const match = /language-(\w+)/.exec(className || '');
+  const code = String(children ?? '').replace(/\n$/, '');
+
+  if (!inline) {
+    return (
+      <SyntaxHighlighter
+        language={match?.[1] || 'plaintext'}
+        // oneDark can be typed in a way that unions CSSProperties with a map; cast to the
+        // expected index-signature type to satisfy the SyntaxHighlighter props.
+        style={oneDark as unknown as { [key: string]: CSSProperties }}
+        wrapLongLines
+        PreTag="div"
+        {...props}
+      >
+        {code}
+      </SyntaxHighlighter>
+    );
+  }
+
+  return (
+    <code className={className} style={codeStyle} {...props}>
+      {children}
+    </code>
+  );
+};
+
+// Public Components map from react-markdown (no private paths)
+const mdComponents: Components = {
+  code: CodeBlock,
+};
+
 export default function ChatPage() {
   const sessionIdRef = useRef<string>(genSessionId());
   const [value, setValue] = useState('');
@@ -87,10 +132,11 @@ export default function ChatPage() {
     };
   }, [loading]);
 
-  // Cleanup tooltips on unmount — copy current refs into locals to satisfy eslint warning
+  // Cleanup tooltips on unmount using a stable snapshot of the ref (fixes React warning)
   useEffect(() => {
+    const snapshot = tooltipRefs.current;
     return () => {
-      const { up, down } = tooltipRefs.current;
+      const { up, down } = snapshot;
       try {
         up?.dispose();
       } catch {}
@@ -102,31 +148,25 @@ export default function ChatPage() {
 
   function showTooltipFor(which: 'up' | 'down', message: string) {
     const el = which === 'up' ? upBtnRef.current : downBtnRef.current;
-    // Works when the Bootstrap CDN bundle has loaded in layout.tsx
-    if (!el || !window.bootstrap || !window.bootstrap.Tooltip) {
-      return;
-    }
+    if (!el || !window.bootstrap || !window.bootstrap.Tooltip) return;
 
     try {
-      // Ensure the element itself has a data title, so Bootstrap always has content
-      el.removeAttribute('title'); // avoid native tooltip collision
-      el.setAttribute('data-bs-title', message);
+      (el as HTMLElement).removeAttribute('title');
+      (el as HTMLElement).setAttribute('data-bs-title', message);
 
-      // Dispose any existing tooltip to avoid stacking
       tooltipRefs.current[which]?.dispose();
 
       const tip = new window.bootstrap.Tooltip(el, {
         placement: 'top',
         trigger: 'manual',
-        container: 'body',               // prevents clipping inside overflow parents
-        customClass: 'feedback-tooltip', // optional styling hook
+        container: 'body',
+        customClass: 'feedback-tooltip',
         fallbackPlacements: ['top'],
       });
 
       tooltipRefs.current[which] = tip;
       tip.show();
 
-      // Auto-hide and dispose after a short delay
       window.setTimeout(() => {
         try {
           tip.hide();
@@ -207,7 +247,7 @@ export default function ChatPage() {
   async function sendFeedback(rating: 'up' | 'down') {
     if (!lastResponseId || submittingFeedback) return;
     setSubmittingFeedback(rating);
-    setFeedbackNote(''); // clear any previous error
+    setFeedbackNote('');
 
     try {
       const res = await fetch('/api/feedback', {
@@ -228,12 +268,9 @@ export default function ChatPage() {
         throw new Error(`${data?.error || 'Feedback failed'} (${res.status})${detail}`);
       }
 
-      // ✅ Success -> show Bootstrap tooltip at the clicked button (Top placement)
-      const tooltipMessage =
-        rating === 'up' ? 'Thanks for the feedback!' : 'Feedback recorded.';
+      const tooltipMessage = rating === 'up' ? 'Thanks for the feedback!' : 'Feedback recorded.';
       showTooltipFor(rating, tooltipMessage);
     } catch (err) {
-      // ❌ Errors -> show inline details
       setFeedbackNote(`Could not send feedback: ${String(err)}`);
     } finally {
       setSubmittingFeedback(null);
@@ -277,7 +314,10 @@ export default function ChatPage() {
                         className={styles.msgAvatar}
                       />
                       <div className={`${styles.msg} ${styles.bot}`}>
-                        {m.content}
+                        {/* ⬇️ Render assistant message as Markdown */}
+                        <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ code: CodeBlock }}>
+                          {m.content}
+                        </ReactMarkdown>
 
                         {/* ✅ Feedback buttons inside ONLY the last assistant bubble */}
                         {isLastAssistant && (
@@ -291,7 +331,6 @@ export default function ChatPage() {
                               disabled={!!submittingFeedback}
                               data-bs-toggle="tooltip"
                               data-bs-placement="top"
-                              // no title attribute – we set data-bs-title via JS
                             >
                               <Image
                                 src="/thumbs_up.png"
@@ -323,17 +362,19 @@ export default function ChatPage() {
                               />
                             </button>
 
-                            {/* Inline note kept for ERROR cases only */}
-                            {feedbackNote && (
-                              <span className={styles.feedbackNote}>{feedbackNote}</span>
-                            )}
+                            {feedbackNote && <span className={styles.feedbackNote}>{feedbackNote}</span>}
                           </div>
                         )}
                       </div>
                     </div>
                   ) : (
                     <div key={i} className={`${styles.row} ${styles.userRow}`}>
-                      <div className={`${styles.msg} ${styles.user}`}>{m.content}</div>
+                      <div className={`${styles.msg} ${styles.user}`}>
+                        {/* (Optional) render user text as Markdown too: */}
+                        <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ code: CodeBlock }}>
+                          {m.content}
+                        </ReactMarkdown>
+                      </div>
                     </div>
                   );
                 })}

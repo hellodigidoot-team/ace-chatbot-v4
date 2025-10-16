@@ -216,3 +216,53 @@
   transition: opacity 220ms ease, transform 220ms ease;
 }
 .ghostVisible{ opacity:1; }
+
+/* --- Markdown formatting inside message bubbles --- */
+.msg :where(p, ul, ol, pre, blockquote, h1, h2, h3, h4, table) {
+  margin: 0.4rem 0;
+}
+
+.msg h1, .msg h2, .msg h3, .msg h4 {
+  line-height: 1.2;
+}
+
+.msg ul, .msg ol {
+  padding-left: 1.25rem;
+}
+
+.msg blockquote {
+  border-left: 3px solid #e2e8f0;
+  padding-left: 0.75rem;
+  color: #475569;
+  background: rgba(148, 163, 184, 0.08);
+  border-radius: 6px;
+}
+
+.msg pre {
+  overflow: auto;
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.msg code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.95em;
+  background: rgba(2, 6, 23, 0.06);
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+}
+
+/* Tables (GFM) */
+.msg table {
+  border-collapse: collapse;
+  width: 100%;
+}
+.msg th, .msg td {
+  border: 1px solid #e5e7eb;
+  padding: 6px 8px;
+  text-align: left;
+}
+.msg thead th {
+  background: #f3f4f6;
+}
