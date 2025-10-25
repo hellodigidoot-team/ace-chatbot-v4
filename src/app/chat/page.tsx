@@ -1,9 +1,16 @@
 // src/app/chat/page.tsx
 'use client';
 
-import { useState, useRef, useEffect, type FormEvent, type ComponentPropsWithoutRef, type ReactNode, type CSSProperties } from 'react';
+import {
+  useState,
+  useRef,
+  useEffect,
+  type FormEvent,
+  type ComponentPropsWithoutRef,
+  type ReactNode,
+  type CSSProperties,
+} from 'react';
 import Image from 'next/image';
-import { SignedIn, SignedOut, RedirectToSignIn } from '@clerk/nextjs';
 import styles from './chat.module.css';
 
 // ⬇️ Markdown + GFM + code highlighting
@@ -282,105 +289,25 @@ export default function ChatPage() {
 
   return (
     <main className={styles.hero}>
-      <SignedOut>
-        <RedirectToSignIn />
-      </SignedOut>
+      <section className={styles.stage}>
+        <div
+          className={`${styles.card} ${showChat ? styles.cardVisible : styles.cardHidden}`}
+          aria-hidden={!showChat}
+          aria-live="polite"
+        >
+          <div className={styles.transcript}>
+            {showChat && messages.length === 0 && !loading && (
+              <p className={styles.placeholder}>This is for the question and response area.</p>
+            )}
 
-      <SignedIn>
-        <section className={styles.stage}>
-          <div
-            className={`${styles.card} ${showChat ? styles.cardVisible : styles.cardHidden}`}
-            aria-hidden={!showChat}
-            aria-live="polite"
-          >
-            <div className={styles.transcript}>
-              {showChat && messages.length === 0 && !loading && (
-                <p className={styles.placeholder}>This is for the question and response area.</p>
-              )}
+            {/* Scrollable message list */}
+            <div className={styles.messages}>
+              {messages.map((m, i) => {
+                const isBot = m.role === 'assistant';
+                const isLastAssistant = isBot && m.response_id === lastResponseId;
 
-              {/* Scrollable message list */}
-              <div className={styles.messages}>
-                {messages.map((m, i) => {
-                  const isBot = m.role === 'assistant';
-                  const isLastAssistant = isBot && m.response_id === lastResponseId;
-
-                  return isBot ? (
-                    <div key={i} className={`${styles.row} ${styles.botRow}`}>
-                      <Image
-                        src="/ghost.png"
-                        alt="Ace"
-                        width={32}
-                        height={32}
-                        className={styles.msgAvatar}
-                      />
-                      <div className={`${styles.msg} ${styles.bot}`}>
-                        {/* ⬇️ Render assistant message as Markdown */}
-                        <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ code: CodeBlock }}>
-                          {m.content}
-                        </ReactMarkdown>
-
-                        {/* ✅ Feedback buttons inside ONLY the last assistant bubble */}
-                        {isLastAssistant && (
-                          <div className={styles.feedback}>
-                            <button
-                              ref={upBtnRef}
-                              type="button"
-                              className={styles.iconBtn}
-                              aria-label="Thumbs up"
-                              onClick={() => sendFeedback('up')}
-                              disabled={!!submittingFeedback}
-                              data-bs-toggle="tooltip"
-                              data-bs-placement="top"
-                            >
-                              <Image
-                                src="/thumbs_up.png"
-                                alt="Thumbs up"
-                                width={100}
-                                height={100}
-                                className={styles.thumbImg}
-                                priority={false}
-                              />
-                            </button>
-
-                            <button
-                              ref={downBtnRef}
-                              type="button"
-                              className={styles.iconBtn}
-                              aria-label="Thumbs down"
-                              onClick={() => sendFeedback('down')}
-                              disabled={!!submittingFeedback}
-                              data-bs-toggle="tooltip"
-                              data-bs-placement="top"
-                            >
-                              <Image
-                                src="/thumbs_down.png"
-                                alt="Thumbs down"
-                                width={100}
-                                height={100}
-                                className={styles.thumbImg}
-                                priority={false}
-                              />
-                            </button>
-
-                            {feedbackNote && <span className={styles.feedbackNote}>{feedbackNote}</span>}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <div key={i} className={`${styles.row} ${styles.userRow}`}>
-                      <div className={`${styles.msg} ${styles.user}`}>
-                        {/* (Optional) render user text as Markdown too: */}
-                        <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ code: CodeBlock }}>
-                          {m.content}
-                        </ReactMarkdown>
-                      </div>
-                    </div>
-                  );
-                })}
-
-                {showLoader && (
-                  <div className={`${styles.row} ${styles.botRow}`} role="status" aria-live="polite">
+                return isBot ? (
+                  <div key={i} className={`${styles.row} ${styles.botRow}`}>
                     <Image
                       src="/ghost.png"
                       alt="Ace"
@@ -388,49 +315,123 @@ export default function ChatPage() {
                       height={32}
                       className={styles.msgAvatar}
                     />
-                    <div className={`${styles.msg} ${styles.bot} ${styles.botTyping}`}>
-                      <div className={styles.dotSpinner} aria-hidden="true">
-                        <span></span><span></span><span></span>
-                      </div>
-                      <span className={styles.typingText}>Ace is thinking…</span>
+                    <div className={`${styles.msg} ${styles.bot}`}>
+                      {/* ⬇️ Render assistant message as Markdown */}
+                      <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ code: CodeBlock }}>
+                        {m.content}
+                      </ReactMarkdown>
+
+                      {/* ✅ Feedback buttons inside ONLY the last assistant bubble */}
+                      {isLastAssistant && (
+                        <div className={styles.feedback}>
+                          <button
+                            ref={upBtnRef}
+                            type="button"
+                            className={styles.iconBtn}
+                            aria-label="Thumbs up"
+                            onClick={() => sendFeedback('up')}
+                            disabled={!!submittingFeedback}
+                            data-bs-toggle="tooltip"
+                            data-bs-placement="top"
+                          >
+                            <Image
+                              src="/thumbs_up.png"
+                              alt="Thumbs up"
+                              width={100}
+                              height={100}
+                              className={styles.thumbImg}
+                              priority={false}
+                            />
+                          </button>
+
+                          <button
+                            ref={downBtnRef}
+                            type="button"
+                            className={styles.iconBtn}
+                            aria-label="Thumbs down"
+                            onClick={() => sendFeedback('down')}
+                            disabled={!!submittingFeedback}
+                            data-bs-toggle="tooltip"
+                            data-bs-placement="top"
+                          >
+                            <Image
+                              src="/thumbs_down.png"
+                              alt="Thumbs down"
+                              width={100}
+                              height={100}
+                              className={styles.thumbImg}
+                              priority={false}
+                            />
+                          </button>
+
+                          {feedbackNote && <span className={styles.feedbackNote}>{feedbackNote}</span>}
+                        </div>
+                      )}
                     </div>
                   </div>
-                )}
+                ) : (
+                  <div key={i} className={`${styles.row} ${styles.userRow}`}>
+                    <div className={`${styles.msg} ${styles.user}`}>
+                      {/* (Optional) render user text as Markdown too: */}
+                      <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ code: CodeBlock }}>
+                        {m.content}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
+                );
+              })}
 
-                <div ref={endRef} />
-              </div>
+              {showLoader && (
+                <div className={`${styles.row} ${styles.botRow}`} role="status" aria-live="polite">
+                  <Image
+                    src="/ghost.png"
+                    alt="Ace"
+                    width={32}
+                    height={32}
+                    className={styles.msgAvatar}
+                  />
+                  <div className={`${styles.msg} ${styles.bot} ${styles.botTyping}`}>
+                    <div className={styles.dotSpinner} aria-hidden="true">
+                      <span></span><span></span><span></span>
+                    </div>
+                    <span className={styles.typingText}>Ace is thinking…</span>
+                  </div>
+                </div>
+              )}
+
+              <div ref={endRef} />
             </div>
           </div>
+        </div>
 
-          <form
-            className={`${styles.inputDock} ${showChat ? styles.dockBottom : styles.dockCenter}`}
-            onSubmit={onSubmit}
-          >
-            {!showChat && (
-              <Image
-                src="/ghost_beside.png"
-                alt="Ace mascot"
-                width={100}
-                height={100}
-                className={`${styles.inputGhost} ${styles.ghostVisible}`}
-                onClick={() => inputRef.current?.focus()}
-                priority
-              />
-            )}
-
-            <input
-              ref={inputRef}
-              className={styles.input}
-              type="text"
-              placeholder={inputPlaceholder}
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              disabled={loading}
-              style={{ color: '#000' }}
+        <form
+          className={`${styles.inputDock} ${showChat ? styles.dockBottom : styles.dockCenter}`}
+          onSubmit={onSubmit}
+        >
+          {!showChat && (
+            <Image
+              src="/ghost_beside.png"
+              alt="Ace mascot"
+              width={100}
+              height={100}
+              className={`${styles.inputGhost} ${styles.ghostVisible}`}
+              onClick={() => inputRef.current?.focus()}
+              priority
             />
-          </form>
-        </section>
-      </SignedIn>
+          )}
+
+          <input
+            ref={inputRef}
+            className={styles.input}
+            type="text"
+            placeholder={inputPlaceholder}
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            disabled={loading}
+            style={{ color: '#000' }}
+          />
+        </form>
+      </section>
     </main>
   );
 }

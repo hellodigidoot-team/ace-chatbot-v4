@@ -1,38 +1,23 @@
 // src/middleware.ts
-// Update
 import { NextResponse } from 'next/server';
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import type { NextRequest } from 'next/server';
 
-const isPublicRoute = createRouteMatcher([
-  '/sign-in(.*)',
-  '/sign-up(.*)',
-  '/sso-callback(.*)',
-]);
+export function middleware(req: NextRequest) {
+  const url = req.nextUrl.clone();
 
-const isAuthPage = createRouteMatcher(['/sign-in(.*)', '/sign-up(.*)']);
-
-export default clerkMiddleware(async (auth, req) => {
-  const { userId, redirectToSignIn } = await auth();
-  const url = req.nextUrl;
-
-  // If already signed in and visiting root or auth pages -> /chat
-  if (userId && (url.pathname === '/' || isAuthPage(req))) {
+  // Redirect root path "/" to "/chat"
+  if (url.pathname === '/') {
     url.pathname = '/chat';
     return NextResponse.redirect(url);
   }
 
-  // If route is NOT public and NOT signed in -> sign in
-  if (!isPublicRoute(req) && !userId) {
-    return redirectToSignIn
-      ? redirectToSignIn({ returnBackUrl: req.url })
-      : NextResponse.redirect(new URL('/sign-in', req.url));
-  }
-
+  // Allow all other requests to continue normally
   return NextResponse.next();
-});
+}
 
 export const config = {
   matcher: [
+    // Apply middleware to all routes except static assets
     '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
     '/(api|trpc)(.*)',
   ],
